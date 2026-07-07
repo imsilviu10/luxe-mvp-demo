@@ -1,0 +1,138 @@
+export const profiles = [
+    {
+      slug: "luxe-profile",
+      name: "Luxe Profile",
+      age: 24,
+      city: "București",
+      status: "Verificat 18+",
+      phone: "+40 700 000 001",
+      isPremium: true,
+      description:
+        "Profil premium, discret și verificat. Disponibil pentru conversații private în platformă, cu accent pe siguranță, eleganță și comunicare clară.",
+      details: [
+        "Profil verificat 18+",
+        "Galerie foto moderată",
+        "Chat privat disponibil",
+        "Anunț premium activ",
+      ],
+    },
+    {
+      slug: "elegant-companion",
+      name: "Elegant Companion",
+      age: 27,
+      city: "Cluj",
+      status: "Anunț activ",
+      phone: "+40 700 000 002",
+      isPremium: true,
+      description:
+        "Prezență elegantă, comunicare clară și profil complet verificat de echipa Luxe.ro. Potrivit pentru utilizatori care caută discreție și seriozitate.",
+      details: [
+        "Profil premium",
+        "Disponibil în Cluj",
+        "Verificare completă",
+        "Răspuns rapid în chat",
+      ],
+    },
+    {
+      slug: "premium-listing",
+      name: "Premium Listing",
+      age: 25,
+      city: "Brașov",
+      status: "Profil nou",
+      phone: "+40 700 000 003",
+      isPremium: false,
+      description:
+        "Profil nou pe Luxe.ro, cu descriere completă, galerie foto și opțiune de chat privat. Anunțul este moderat și afișat conform regulilor platformei.",
+      details: [
+        "Profil nou",
+        "Oraș Brașov",
+        "Chat disponibil",
+        "Anunț moderat",
+      ],
+    },
+    {
+      slug: "urban-profile",
+      name: "Urban Profile",
+      age: 29,
+      city: "Constanța",
+      status: "Verificat 18+",
+      phone: "+40 700 000 004",
+      isPremium: false,
+      description:
+        "Profil activ, potrivit pentru utilizatori care caută o experiență discretă și modernă. Informațiile sunt clare, iar contactul se poate face prin platformă.",
+      details: [
+        "Profil verificat",
+        "Constanța",
+        "Contact prin chat",
+        "Anunț activ",
+      ],
+    },
+    {
+      slug: "classic-luxe",
+      name: "Classic Luxe",
+      age: 26,
+      city: "Iași",
+      status: "Anunț activ",
+      phone: "+40 700 000 005",
+      isPremium: true,
+      description:
+        "Anunț verificat, cu informații clare și posibilitate de contact prin chat intern. Profil creat pentru utilizatori care apreciază discreția.",
+      details: [
+        "Anunț premium",
+        "Iași",
+        "Profil activ",
+        "Vizibilitate crescută",
+      ],
+    },
+    {
+      slug: "private-profile",
+      name: "Private Profile",
+      age: 28,
+      city: "Timișoara",
+      status: "Verificat 18+",
+      phone: "+40 700 000 006",
+      isPremium: false,
+      description:
+        "Profil discret, cu accent pe siguranță, comunicare privată și confidențialitate. Anunțul este verificat și moderat înainte de afișare.",
+      details: [
+        "Profil discret",
+        "Timișoara",
+        "Verificat 18+",
+        "Chat privat",
+      ],
+    },
+    {
+      slug: "luxe-sibiu",
+      name: "Luxe Sibiu",
+      age: 25,
+      city: "Sibiu",
+      status: "Profil nou",
+      phone: "+40 700 000 007",
+      isPremium: false,
+      description:
+        "Profil nou în Sibiu, creat pentru utilizatori care caută discreție și comunicare rapidă. Toate informațiile sunt afișate clar.",
+      details: [
+        "Profil nou",
+        "Sibiu",
+        "Moderare activă",
+        "Contact rapid",
+      ],
+    },
+    {
+      slug: "oradea-premium",
+      name: "Oradea Premium",
+      age: 30,
+      city: "Oradea",
+      status: "Verificat 18+",
+      phone: "+40 700 000 008",
+      isPremium: true,
+      description:
+        "Profil premium în Oradea, cu anunț activ și vizibilitate crescută în listări. Potrivit pentru utilizatori care caută o platformă modernă și discretă.",
+      details: [
+        "Premium",
+        "Oradea",
+        "Verificat 18+",
+        "Vizibilitate crescută",
+      ],
+    },
+  ];
