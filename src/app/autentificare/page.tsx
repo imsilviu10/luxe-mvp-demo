@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type AccountRole = "user" | "advertiser";
@@ -27,14 +27,14 @@ const publicRoles = [
   {
     id: "user",
     title: "Utilizator",
-    description: "Intră pentru a vedea profiluri, chat demo și raportări.",
-    redirect: "/profiluri",
+    description:
+      "Intră pentru a vedea profiluri, a deschide chat demo și a trimite raportări.",
   },
   {
     id: "advertiser",
     title: "Advertiser",
-    description: "Intră pentru a publica anunțuri și a vedea statusul.",
-    redirect: "/cont",
+    description:
+      "Intră pentru a publica anunțuri, a vedea statusul verificării și a continua către plată.",
   },
 ] as const;
 
@@ -57,16 +57,11 @@ function getRoleRedirect(role: AccountRole) {
 export default function LoginPage() {
   const router = useRouter();
 
-  const [selectedRole, setSelectedRole] = useState<AccountRole>("user");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [acceptedRules, setAcceptedRules] = useState(false);
   const [errors, setErrors] = useState<LoginErrors>({});
   const [generalError, setGeneralError] = useState("");
-
-  const selectedRoleData = useMemo(() => {
-    return publicRoles.find((role) => role.id === selectedRole) || publicRoles[0];
-  }, [selectedRole]);
 
   function clearError(field: keyof LoginErrors) {
     setErrors((currentErrors) => ({
@@ -152,7 +147,7 @@ export default function LoginPage() {
 
     if (!acceptedRules) {
       setGeneralError(
-        "Trebuie să confirmi că ai minimum 18 ani și accepți regulile."
+        "Trebuie să confirmi că ai minimum 18 ani și accepți regulile platformei."
       );
       return;
     }
@@ -227,7 +222,7 @@ export default function LoginPage() {
           </Link>
         </nav>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-10">
+        <div className="relative z-10 mx-auto max-w-7xl px-6 pb-14 pt-8">
           <div className="max-w-3xl">
             <div className="mb-5 inline-flex rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm text-rose-300">
               Autentificare publică 18+
@@ -238,8 +233,8 @@ export default function LoginPage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
-              Aici intră doar utilizatorii și advertiserii. Accesul admin este
-              separat și nu apare public pe site.
+              Zona publică este pentru utilizatori și advertiseri. Adminul are
+              acces separat pentru moderare și prezentare demo.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -261,9 +256,9 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 md:p-8">
-          <div className="mb-8">
+      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl md:p-8">
+          <div className="mb-8 rounded-3xl border border-white/10 bg-black/25 p-5">
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
               Login
             </p>
@@ -272,14 +267,14 @@ export default function LoginPage() {
               Intră cu un cont creat.
             </h2>
 
-            <p className="mt-3 leading-7 text-white/60">
-              Folosește emailul contului creat în pagina de înregistrare. În
-              demo, conturile sunt salvate local în browser.
+            <p className="mt-3 max-w-2xl leading-7 text-white/60">
+              Folosește emailul și parola contului creat în pagina de
+              înregistrare. În demo, conturile sunt salvate local în browser.
             </p>
           </div>
 
           <div className="space-y-6">
-            <div>
+            <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
               <label className="mb-2 block text-sm font-semibold text-white/80">
                 Email
               </label>
@@ -292,15 +287,17 @@ export default function LoginPage() {
                   clearError("email");
                 }}
                 placeholder="exemplu@email.com"
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
               />
 
               {errors.email && (
-                <p className="mt-2 text-sm text-rose-300">{errors.email}</p>
+                <p className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                  {errors.email}
+                </p>
               )}
             </div>
 
-            <div>
+            <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
               <label className="mb-2 block text-sm font-semibold text-white/80">
                 Parolă
               </label>
@@ -313,17 +310,17 @@ export default function LoginPage() {
                   clearError("password");
                 }}
                 placeholder="Parola contului"
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
               />
 
               {errors.password && (
-                <p className="mt-2 text-sm text-rose-300">
+                <p className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
                   {errors.password}
                 </p>
               )}
             </div>
 
-            <label className="flex cursor-pointer gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm leading-6 text-white/60">
+            <label className="flex cursor-pointer gap-4 rounded-3xl border border-white/10 bg-black/30 p-5 text-sm leading-7 text-white/65 transition hover:bg-white/[0.04]">
               <input
                 type="checkbox"
                 checked={acceptedRules}
@@ -331,7 +328,7 @@ export default function LoginPage() {
                   setAcceptedRules(event.target.checked);
                   setGeneralError("");
                 }}
-                className="mt-1 h-4 w-4"
+                className="mt-1 h-4 w-4 shrink-0"
               />
 
               <span>
@@ -348,7 +345,7 @@ export default function LoginPage() {
             </label>
 
             {generalError && (
-              <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
+              <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 p-5 text-sm leading-7 text-rose-100">
                 {generalError}
               </div>
             )}
@@ -361,17 +358,17 @@ export default function LoginPage() {
               Intră în cont
             </button>
 
-            <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
-              <h3 className="text-lg font-bold">Nu ai cont?</h3>
+            <div className="rounded-[2rem] border border-white/10 bg-black/30 p-6">
+              <h3 className="text-xl font-bold">Nu ai cont?</h3>
 
-              <p className="mt-2 text-sm leading-6 text-white/50">
-                Creează un cont nou ca utilizator sau advertiser. Adminul nu se
-                creează public.
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-white/55">
+                Creează un cont nou ca utilizator sau advertiser. Conturile de
+                admin nu se creează public.
               </p>
 
               <Link
                 href="/inregistrare"
-                className="mt-4 block rounded-full bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-white/80"
+                className="mt-5 block rounded-full bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-white/80"
               >
                 Creează cont nou
               </Link>
@@ -380,35 +377,47 @@ export default function LoginPage() {
         </div>
 
         <aside className="space-y-6">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
-              Login rapid demo
-            </p>
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl md:p-8">
+            <div className="mb-6 rounded-3xl border border-white/10 bg-black/25 p-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
+                Login rapid demo
+              </p>
 
-            <h2 className="mt-3 text-2xl font-bold">
-              Testează fără cont creat.
-            </h2>
+              <h2 className="mt-3 text-2xl font-bold">
+                Testează fără cont creat.
+              </h2>
 
-            <p className="mt-3 text-sm leading-7 text-white/60">
-              Pentru testare rapidă poți intra direct ca utilizator sau
-              advertiser demo.
-            </p>
+              <p className="mt-3 text-sm leading-7 text-white/60">
+                Pentru prezentare rapidă, poți intra direct ca utilizator sau
+                advertiser demo.
+              </p>
+            </div>
 
-            <div className="mt-6 space-y-3">
+            <div className="space-y-4">
               {publicRoles.map((role) => (
                 <button
                   key={role.id}
                   type="button"
                   onClick={() => quickLogin(role.id)}
-                  className="w-full rounded-3xl border border-white/10 bg-black/30 p-5 text-left transition hover:bg-white/[0.06]"
+                  className="group flex w-full flex-col rounded-3xl border border-white/10 bg-black/30 p-5 text-left transition hover:border-rose-500/30 hover:bg-white/[0.06]"
                 >
-                  <p className="font-bold">{role.title}</p>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-lg font-bold text-white">
+                        {role.title}
+                      </p>
 
-                  <p className="mt-2 text-sm leading-6 text-white/50">
-                    {role.description}
-                  </p>
+                      <p className="mt-2 max-w-md text-sm leading-7 text-white/55">
+                        {role.description}
+                      </p>
+                    </div>
 
-                  <div className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-black">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-bold text-white transition group-hover:bg-rose-500">
+                      {role.id === "advertiser" ? "A" : "U"}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 w-full rounded-full bg-white px-4 py-3 text-center text-sm font-semibold text-black transition group-hover:bg-rose-500 group-hover:text-white">
                     Intră ca {role.title}
                   </div>
                 </button>
@@ -421,9 +430,9 @@ export default function LoginPage() {
               Adminul este separat
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-rose-100/70">
-              Pagina publică de autentificare nu afișează admin. Conturile admin
-              sunt interne și nu pot fi create de utilizatori.
+            <p className="mt-3 text-sm leading-7 text-rose-100/75">
+              Pagina publică de autentificare nu afișează rolul de admin.
+              Conturile admin sunt interne și nu pot fi create de utilizatori.
             </p>
           </div>
 
@@ -432,9 +441,9 @@ export default function LoginPage() {
               Cum testezi corect
             </h2>
 
-            <div className="mt-4 space-y-3 text-sm leading-7 text-sky-100/70">
-              <p>1. Creezi cont nou în /inregistrare.</p>
-              <p>2. Apeși Ieșire din cont.</p>
+            <div className="mt-4 space-y-3 text-sm leading-7 text-sky-100/75">
+              <p>1. Creezi cont nou în pagina de înregistrare.</p>
+              <p>2. Apeși ieșire din cont.</p>
               <p>3. Revii aici și intri cu emailul contului creat.</p>
             </div>
           </div>
@@ -442,31 +451,31 @@ export default function LoginPage() {
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6">
             <h2 className="text-xl font-bold">Pagini utile</h2>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 grid gap-3">
               <Link
                 href="/inregistrare"
-                className="block rounded-full bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-white/80"
+                className="rounded-full bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-white/80"
               >
                 Creează cont
               </Link>
 
               <Link
                 href="/profiluri"
-                className="block rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
+                className="rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
               >
                 Profiluri
               </Link>
 
               <Link
                 href="/publica-anunt"
-                className="block rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
+                className="rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
               >
                 Publică anunț
               </Link>
 
               <Link
                 href="/iesire"
-                className="block rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
+                className="rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
               >
                 Ieșire
               </Link>
