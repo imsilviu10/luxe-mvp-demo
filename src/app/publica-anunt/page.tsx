@@ -1,8 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+
+type AccountRole = "user" | "advertiser" | "admin";
+
+type DemoAccount = {
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: AccountRole;
+  roleLabel?: string;
+  loggedInAt?: string;
+};
+
+type PackageId = "basic" | "standard" | "premium";
+
+type AdPackage = {
+  id: PackageId;
+  title: string;
+  subtitle: string;
+  price: number;
+  duration: string;
+  badge: string;
+  features: string[];
+  highlighted?: boolean;
+};
 
 type FormErrors = {
   displayName?: string;
@@ -10,53 +34,54 @@ type FormErrors = {
   city?: string;
   phone?: string;
   description?: string;
+  selectedPackageId?: string;
   acceptedRules?: string;
 };
 
-type PackageOption = {
-  id: string;
-  name: string;
-  price: string;
-  duration: string;
-  label: string;
-  features: string[];
-};
-
-const packages: PackageOption[] = [
+const packages: AdPackage[] = [
   {
     id: "basic",
-    name: "Basic",
-    price: "49 RON",
+    title: "Basic",
+    subtitle: "Pentru testarea listării",
+    price: 49,
     duration: "7 zile",
-    label: "49 RON",
+    badge: "Start",
     features: [
-      "Anunț activ 7 zile",
-      "Afișare în lista de profiluri",
+      "Profil public în listă",
+      "Pagină profil individuală",
+      "Chat demo activ",
       "Verificare 18+ obligatorie",
     ],
   },
   {
     id: "standard",
-    name: "Standard",
-    price: "149 RON",
+    title: "Standard",
+    subtitle: "Cel mai potrivit pentru demo",
+    price: 149,
     duration: "30 zile",
-    label: "149 RON",
+    badge: "Recomandat",
+    highlighted: true,
     features: [
-      "Anunț activ 30 zile",
-      "Poziționare mai bună în listă",
-      "Chat privat demo",
+      "Profil public 30 zile",
+      "Pagină profil individuală",
+      "Chat demo activ",
+      "Apariție mai bună în listă",
+      "Status advertiser complet",
     ],
   },
   {
     id: "premium",
-    name: "Premium",
-    price: "299 RON",
+    title: "Premium",
+    subtitle: "Pentru prezentare premium",
+    price: 299,
     duration: "30 zile",
-    label: "299 RON",
+    badge: "Premium",
     features: [
-      "Anunț activ 30 zile",
-      "Badge Premium",
-      "Boost în orașul selectat",
+      "Profil premium evidențiat",
+      "Boost vizibilitate demo",
+      "Apariție prioritară în listă",
+      "Chat demo activ",
+      "Status complet advertiser",
     ],
   },
 ];
@@ -72,32 +97,137 @@ const cities = [
   "Oradea",
 ];
 
+function createDemoAdvertiserAccount() {
+  return {
+    id: `quick-advertiser-${Date.now()}`,
+    name: "Advertiser Demo",
+    email: "advertiser.demo@luxe.ro",
+    role: "advertiser" as const,
+    roleLabel: "Advertiser",
+    loggedInAt: new Date().toISOString(),
+  };
+}
+
 export default function PublishAdPage() {
   const router = useRouter();
+
+  const [isCheckingAccount, setIsCheckingAccount] = useState(true);
+  const [account, setAccount] = useState<DemoAccount | null>(null);
 
   const [displayName, setDisplayName] = useState("");
   const [age, setAge] = useState("");
   const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedPackageId, setSelectedPackageId] = useState("standard");
+  const [selectedPackageId, setSelectedPackageId] =
+    useState<PackageId>("standard");
   const [acceptedRules, setAcceptedRules] = useState(false);
   const [photoNames, setPhotoNames] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const selectedPackage = useMemo(() => {
-    return packages.find((item) => item.id === selectedPackageId) || packages[1];
+    return (
+      packages.find((adPackage) => adPackage.id === selectedPackageId) ||
+      packages[1]
+    );
   }, [selectedPackageId]);
+
+  const descriptionLength = description.trim().length;
+
+  const completionScore = useMemo(() => {
+    let score = 0;
+
+    if (displayName.trim().length >= 2) {
+      score += 15;
+    }
+
+    if (Number(age) >= 18) {
+      score += 15;
+    }
+
+    if (city) {
+      score += 15;
+    }
+
+    if (phone.trim().length >= 8) {
+      score += 15;
+    }
+
+    if (description.trim().length >= 20) {
+      score += 20;
+    }
+
+    if (selectedPackageId) {
+      score += 10;
+    }
+
+    if (acceptedRules) {
+      score += 10;
+    }
+
+    return Math.min(score, 100);
+  }, [
+    acceptedRules,
+    age,
+    city,
+    description,
+    displayName,
+    phone,
+    selectedPackageId,
+  ]);
+
+  useEffect(() => {
+    const savedAccount = localStorage.getItem("luxe_demo_account");
+    const savedRole = localStorage.getItem("luxe_demo_role");
+
+    if (!savedAccount || savedRole !== "advertiser") {
+      setAccount(null);
+      setIsCheckingAccount(false);
+      return;
+    }
+
+    try {
+      const parsedAccount = JSON.parse(savedAccount) as DemoAccount;
+
+      if (parsedAccount.role === "advertiser") {
+        setAccount(parsedAccount);
+      } else {
+        setAccount(null);
+      }
+    } catch {
+      setAccount(null);
+    }
+
+    setIsCheckingAccount(false);
+  }, []);
+
+  function clearError(field: keyof FormErrors) {
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      [field]: "",
+    }));
+  }
+
+  function loginAsDemoAdvertiser() {
+    const demoAccount = createDemoAdvertiserAccount();
+
+    localStorage.setItem("luxe_demo_account", JSON.stringify(demoAccount));
+    localStorage.setItem("luxe_demo_role", "advertiser");
+
+    setAccount(demoAccount);
+    window.dispatchEvent(new Event("storage"));
+  }
 
   function validateForm() {
     const newErrors: FormErrors = {};
+    const numericAge = Number(age);
 
     if (displayName.trim().length < 2) {
-      newErrors.displayName = "Completează un nume de afișare.";
+      newErrors.displayName = "Completează numele profilului.";
     }
 
-    if (!age || Number(age) < 18) {
-      newErrors.age = "Trebuie să ai minimum 18 ani.";
+    if (!age || Number.isNaN(numericAge) || numericAge < 18) {
+      newErrors.age = "Vârsta trebuie să fie minimum 18 ani.";
     }
 
     if (!city) {
@@ -109,11 +239,17 @@ export default function PublishAdPage() {
     }
 
     if (description.trim().length < 20) {
-      newErrors.description = "Descrierea trebuie să aibă minimum 20 caractere.";
+      newErrors.description =
+        "Descrierea trebuie să aibă minimum 20 de caractere.";
+    }
+
+    if (!selectedPackageId) {
+      newErrors.selectedPackageId = "Alege un pachet.";
     }
 
     if (!acceptedRules) {
-      newErrors.acceptedRules = "Trebuie să accepți regulile platformei.";
+      newErrors.acceptedRules =
+        "Trebuie să confirmi regulile și condițiile platformei.";
     }
 
     setErrors(newErrors);
@@ -121,19 +257,7 @@ export default function PublishAdPage() {
     return Object.keys(newErrors).length === 0;
   }
 
-  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files;
-
-    if (!files) {
-      setPhotoNames([]);
-      return;
-    }
-
-    const names = Array.from(files).map((file) => file.name);
-    setPhotoNames(names);
-  }
-
-  function continueToVerification() {
+  function submitAd() {
     const isValid = validateForm();
 
     if (!isValid) {
@@ -142,12 +266,15 @@ export default function PublishAdPage() {
 
     const draftAd = {
       displayName: displayName.trim(),
-      age,
+      age: Number(age),
       city,
       phone: phone.trim(),
       description: description.trim(),
       selectedPackage,
       photoNames,
+      ownerName: account?.name || "Advertiser Demo",
+      ownerEmail: account?.email || "advertiser.demo@luxe.ro",
+      createdAt: new Date().toISOString(),
     };
 
     localStorage.setItem("luxe_draft_ad", JSON.stringify(draftAd));
@@ -161,10 +288,129 @@ export default function PublishAdPage() {
     router.push("/verificare-18");
   }
 
+  if (isCheckingAccount) {
+    return (
+      <main className="min-h-screen bg-[#09090b] text-white">
+        <section className="flex min-h-screen items-center justify-center px-6">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
+              Verificare acces
+            </p>
+
+            <h1 className="mt-4 text-3xl font-bold">
+              Pregătim formularul de publicare...
+            </h1>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (!account) {
+    return (
+      <main className="min-h-screen bg-[#09090b] text-white">
+        <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(244,63,94,0.28),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.16),_transparent_30%),radial-gradient(circle_at_bottom,_rgba(168,85,247,0.14),_transparent_35%)]" />
+
+          <div className="relative z-10 w-full max-w-4xl rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-center shadow-2xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-rose-500/10 text-3xl">
+              🔒
+            </div>
+
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
+              Publicare anunț
+            </p>
+
+            <h1 className="mt-4 text-4xl font-bold tracking-tight md:text-6xl">
+              Pentru a publica un anunț trebuie să intri ca advertiser.
+            </h1>
+
+            <p className="mx-auto mt-6 max-w-2xl leading-8 text-white/60">
+              Zona de publicare este separată de zona utilizatorilor. Un
+              advertiser poate crea anunțuri, trimite verificare 18+, urmări
+              statusul admin și continua către plată.
+            </p>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <button
+                type="button"
+                onClick={loginAsDemoAdvertiser}
+                className="rounded-full bg-rose-500 px-6 py-4 font-semibold text-white transition hover:bg-rose-400"
+              >
+                Intră ca advertiser demo
+              </button>
+
+              <Link
+                href="/autentificare"
+                className="rounded-full bg-white px-6 py-4 text-center font-semibold text-black transition hover:bg-white/80"
+              >
+                Login public
+              </Link>
+
+              <Link
+                href="/inregistrare"
+                className="rounded-full border border-white/10 px-6 py-4 text-center font-semibold text-white transition hover:bg-white/10"
+              >
+                Creează cont
+              </Link>
+            </div>
+
+            <div className="mt-8 grid gap-4 text-left md:grid-cols-3">
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                <h2 className="text-lg font-bold">1. Cont advertiser</h2>
+
+                <p className="mt-3 text-sm leading-7 text-white/55">
+                  Intră cu un cont advertiser sau folosește demo-ul rapid pentru
+                  prezentare.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                <h2 className="text-lg font-bold">2. Verificare 18+</h2>
+
+                <p className="mt-3 text-sm leading-7 text-white/55">
+                  După publicare, advertiserul trimite verificarea demo înainte
+                  de moderare.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                <h2 className="text-lg font-bold">3. Admin + plată</h2>
+
+                <p className="mt-3 text-sm leading-7 text-white/55">
+                  Adminul aprobă anunțul, iar advertiserul continuă către plata
+                  demo.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3 text-sm text-white/50">
+              <Link href="/" className="hover:text-white">
+                Acasă
+              </Link>
+
+              <span>•</span>
+
+              <Link href="/profiluri" className="hover:text-white">
+                Profiluri
+              </Link>
+
+              <span>•</span>
+
+              <Link href="/prezentare" className="hover:text-white">
+                Prezentare MVP
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#09090b] text-white">
       <section className="relative overflow-hidden border-b border-white/10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(244,63,94,0.28),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.18),_transparent_30%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(244,63,94,0.28),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.16),_transparent_30%),radial-gradient(circle_at_bottom,_rgba(168,85,247,0.14),_transparent_35%)]" />
 
         <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
@@ -172,318 +418,548 @@ export default function PublishAdPage() {
               Luxe
             </Link>
 
-            <Link
-              href="/"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
-            >
-              Acasă
-            </Link>
+            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+              Publicare advertiser
+            </span>
           </div>
 
           <div className="hidden items-center gap-8 text-sm text-white/70 md:flex">
+            <Link href="/cont" className="hover:text-white">
+              Dashboard
+            </Link>
+
+            <Link href="/cont/anunt" className="hover:text-white">
+              Status anunț
+            </Link>
+
             <Link href="/profiluri" className="hover:text-white">
               Profiluri
             </Link>
 
-            <Link href="/cont/anunt" className="hover:text-white">
-              Cont advertiser
-            </Link>
-
-            <Link href="/admin" className="hover:text-white">
-              Admin demo
+            <Link href="/iesire" className="hover:text-white">
+              Ieșire
             </Link>
           </div>
 
           <Link
-            href="/profiluri"
+            href="/cont"
             className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-white/80"
           >
-            Vezi profiluri
+            Cont advertiser
           </Link>
         </nav>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-6 pb-14 pt-10">
-          <div className="max-w-3xl">
-            <div className="mb-5 inline-flex rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm text-white/70">
-              Luxe.ro — publicare anunț 18+
+        <div className="relative z-10 mx-auto grid max-w-7xl gap-8 px-6 pb-16 pt-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+          <div>
+            <div className="mb-5 inline-flex rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300">
+              Creează anunț premium
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-              Publică un anunț premium.
+              Publică un anunț 18+ într-un flow clar și moderat.
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
-              Completează datele anunțului, alege pachetul dorit, apoi mergi la
-              verificarea 18+. După aprobare, advertiserul va putea plăti
-              pachetul ales.
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-white/70">
+              Completează datele profilului, alege pachetul și trimite anunțul
+              către verificare 18+ și moderare admin. Plata se face doar după
+              aprobarea adminului.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <a
+                href="#formular-anunt"
+                className="rounded-full bg-rose-500 px-8 py-4 text-center font-semibold text-white transition hover:bg-rose-400"
+              >
+                Completează formularul
+              </a>
+
+              <Link
+                href="/reguli"
+                className="rounded-full bg-white px-8 py-4 text-center font-semibold text-black transition hover:bg-white/80"
+              >
+                Citește regulile
+              </Link>
+
+              <Link
+                href="/prezentare"
+                className="rounded-full border border-white/10 px-8 py-4 text-center font-semibold text-white transition hover:bg-white/10"
+              >
+                Prezentare MVP
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-300">
+                  Completare formular
+                </p>
+
+                <h2 className="mt-3 text-4xl font-bold">
+                  {completionScore}%
+                </h2>
+              </div>
+
+              <div className="rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200">
+                {selectedPackage.title}
+              </div>
+            </div>
+
+            <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-rose-500 transition-all"
+                style={{ width: `${completionScore}%` }}
+              />
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-4">
+                <p className="text-xs text-white/45">Pachet</p>
+                <p className="mt-2 font-semibold">{selectedPackage.title}</p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-4">
+                <p className="text-xs text-white/45">Cost</p>
+                <p className="mt-2 font-semibold">
+                  {selectedPackage.price} RON
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-4">
+                <p className="text-xs text-white/45">Durată</p>
+                <p className="mt-2 font-semibold">
+                  {selectedPackage.duration}
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-5 text-sm leading-7 text-white/55">
+              Cont activ:{" "}
+              <span className="font-semibold text-white">
+                {account.name || "Advertiser Demo"}
+              </span>
             </p>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
-            Formular anunț
-          </p>
+      <section
+        id="formular-anunt"
+        className="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[1.08fr_0.92fr]"
+      >
+        <div className="space-y-8">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl md:p-8">
+            <div className="mb-8 rounded-3xl border border-white/10 bg-black/25 p-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
+                Formular
+              </p>
 
-          <h2 className="mt-3 text-3xl font-bold">Detalii profil</h2>
+              <h2 className="mt-3 text-3xl font-bold">
+                Datele profilului
+              </h2>
 
-          <div className="mt-8 space-y-6">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-white/80">
-                Nume de afișare
-              </label>
-
-              <input
-                type="text"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="Ex: Maria"
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
-              />
-
-              {errors.displayName && (
-                <p className="mt-2 text-sm text-rose-300">
-                  {errors.displayName}
-                </p>
-              )}
+              <p className="mt-3 max-w-2xl leading-7 text-white/60">
+                Aceste informații vor fi folosite pentru profilul public după
+                verificare, aprobare și plată demo.
+              </p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2">
-              <div>
+            <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                  <label className="mb-2 block text-sm font-semibold text-white/80">
+                    Nume afișat
+                  </label>
+
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(event) => {
+                      setDisplayName(event.target.value);
+                      clearError("displayName");
+                    }}
+                    placeholder="Ex: Profil Premium"
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
+                  />
+
+                  {errors.displayName && (
+                    <p className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                      {errors.displayName}
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                  <label className="mb-2 block text-sm font-semibold text-white/80">
+                    Vârstă
+                  </label>
+
+                  <input
+                    type="number"
+                    min="18"
+                    value={age}
+                    onChange={(event) => {
+                      setAge(event.target.value);
+                      clearError("age");
+                    }}
+                    placeholder="Minimum 18"
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
+                  />
+
+                  {errors.age && (
+                    <p className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                      {errors.age}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                  <label className="mb-2 block text-sm font-semibold text-white/80">
+                    Oraș
+                  </label>
+
+                  <select
+                    value={city}
+                    onChange={(event) => {
+                      setCity(event.target.value);
+                      clearError("city");
+                    }}
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none transition focus:border-rose-500"
+                  >
+                    <option value="">Alege orașul</option>
+
+                    {cities.map((cityName) => (
+                      <option key={cityName} value={cityName}>
+                        {cityName}
+                      </option>
+                    ))}
+                  </select>
+
+                  {errors.city && (
+                    <p className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                      {errors.city}
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                  <label className="mb-2 block text-sm font-semibold text-white/80">
+                    Telefon
+                  </label>
+
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(event) => {
+                      setPhone(event.target.value);
+                      clearError("phone");
+                    }}
+                    placeholder="+40 700 000 000"
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
+                  />
+
+                  {errors.phone && (
+                    <p className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                      {errors.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <label className="block text-sm font-semibold text-white/80">
+                    Descriere
+                  </label>
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      descriptionLength >= 20
+                        ? "bg-emerald-500/10 text-emerald-200"
+                        : "bg-white/10 text-white/45"
+                    }`}
+                  >
+                    {descriptionLength}/20 caractere
+                  </span>
+                </div>
+
+                <textarea
+                  value={description}
+                  onChange={(event) => {
+                    setDescription(event.target.value);
+                    clearError("description");
+                  }}
+                  placeholder="Scrie o descriere elegantă și clară pentru profil..."
+                  rows={7}
+                  className="mt-3 w-full resize-none rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
+                />
+
+                {errors.description && (
+                  <p className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                    {errors.description}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
                 <label className="mb-2 block text-sm font-semibold text-white/80">
-                  Vârstă
+                  Fotografii demo
                 </label>
 
                 <input
-                  type="number"
-                  value={age}
-                  onChange={(event) => setAge(event.target.value)}
-                  placeholder="Ex: 25"
-                  min="18"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(event) => {
+                    const selectedFiles = Array.from(event.target.files || []);
+                    setPhotoNames(selectedFiles.map((file) => file.name));
+                  }}
+                  className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black"
                 />
 
-                {errors.age && (
-                  <p className="mt-2 text-sm text-rose-300">{errors.age}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-white/80">
-                  Oraș
-                </label>
-
-                <select
-                  value={city}
-                  onChange={(event) => setCity(event.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none transition focus:border-rose-500"
-                >
-                  <option value="">Alege orașul</option>
-
-                  {cities.map((item) => (
-                    <option key={item} value={item} className="bg-zinc-950">
-                      {item}
-                    </option>
-                  ))}
-                </select>
-
-                {errors.city && (
-                  <p className="mt-2 text-sm text-rose-300">{errors.city}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-white/80">
-                Telefon
-              </label>
-
-              <input
-                type="tel"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                placeholder="Ex: +40 700 000 000"
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
-              />
-
-              {errors.phone && (
-                <p className="mt-2 text-sm text-rose-300">{errors.phone}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-white/80">
-                Descriere
-              </label>
-
-              <textarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Scrie o descriere elegantă pentru profilul tău..."
-                rows={6}
-                className="w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-rose-500"
-              />
-
-              <div className="mt-2 flex items-center justify-between gap-3">
-                {errors.description ? (
-                  <p className="text-sm text-rose-300">
-                    {errors.description}
-                  </p>
-                ) : (
-                  <p className="text-sm text-white/40">
-                    Minimum 20 caractere.
-                  </p>
-                )}
-
-                <p className="text-sm text-white/40">
-                  {description.length} caractere
+                <p className="mt-3 text-sm leading-7 text-white/50">
+                  În demo salvăm doar numele fișierelor, nu încărcăm fotografii
+                  reale pe server.
                 </p>
-              </div>
-            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-white/80">
-                Fotografii demo
-              </label>
-
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-white outline-none file:mr-4 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black"
-              />
-
-              <p className="mt-2 text-sm text-white/40">
-                În această etapă salvăm doar numele fișierelor, nu încărcăm
-                imaginile real.
-              </p>
-
-              {photoNames.length > 0 && (
-                <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-sm font-semibold text-white/70">
-                    Fotografii selectate:
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {photoNames.map((name) => (
-                      <span
-                        key={name}
-                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/60"
+                {photoNames.length > 0 && (
+                  <div className="mt-4 grid gap-2 md:grid-cols-2">
+                    {photoNames.map((photoName) => (
+                      <div
+                        key={photoName}
+                        className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/65"
                       >
-                        {name}
-                      </span>
+                        {photoName}
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl md:p-8">
+            <div className="mb-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
+                Pachete
+              </p>
+
+              <h2 className="mt-3 text-3xl font-bold">
+                Alege pachetul anunțului
+              </h2>
             </div>
 
-            <label className="flex cursor-pointer gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm leading-6 text-white/60">
-              <input
-                type="checkbox"
-                checked={acceptedRules}
-                onChange={(event) => setAcceptedRules(event.target.checked)}
-                className="mt-1 h-4 w-4"
-              />
-
-              <span>
-                Confirm că am peste 18 ani, că informațiile sunt corecte și că
-                accept regulile platformei Luxe.ro.
-              </span>
-            </label>
-
-            {errors.acceptedRules && (
-              <p className="text-sm text-rose-300">{errors.acceptedRules}</p>
-            )}
-
-            <button
-              type="button"
-              onClick={continueToVerification}
-              className="w-full rounded-full bg-rose-500 px-6 py-4 font-semibold text-white transition hover:bg-rose-400"
-            >
-              Continuă către verificare
-            </button>
-          </div>
-        </div>
-
-        <aside className="space-y-6">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
-              Pachet ales
-            </p>
-
-            <h2 className="mt-3 text-2xl font-bold">
-              {selectedPackage.name}
-            </h2>
-
-            <p className="mt-2 text-white/50">
-              {selectedPackage.duration} • {selectedPackage.price}
-            </p>
-
-            <div className="mt-6 space-y-3">
-              {packages.map((item) => {
-                const isActive = selectedPackageId === item.id;
+            <div className="grid gap-5 lg:grid-cols-3">
+              {packages.map((adPackage) => {
+                const isSelected = selectedPackageId === adPackage.id;
 
                 return (
                   <button
-                    key={item.id}
+                    key={adPackage.id}
                     type="button"
-                    onClick={() => setSelectedPackageId(item.id)}
-                    className={`w-full rounded-3xl border p-5 text-left transition ${
-                      isActive
-                        ? "border-rose-500 bg-rose-500/10"
-                        : "border-white/10 bg-black/30 hover:bg-white/10"
+                    onClick={() => {
+                      setSelectedPackageId(adPackage.id);
+                      clearError("selectedPackageId");
+                    }}
+                    className={`relative rounded-[2rem] border p-5 text-left transition ${
+                      isSelected
+                        ? "border-rose-500/40 bg-rose-500/10"
+                        : "border-white/10 bg-black/30 hover:bg-white/[0.06]"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-xl font-bold">{item.name}</h3>
-                        <p className="mt-1 text-sm text-white/50">
-                          {item.duration}
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            adPackage.highlighted
+                              ? "bg-rose-500 text-white"
+                              : "bg-white/10 text-white/60"
+                          }`}
+                        >
+                          {adPackage.badge}
+                        </span>
+
+                        <h3 className="mt-4 text-2xl font-bold">
+                          {adPackage.title}
+                        </h3>
+
+                        <p className="mt-2 text-sm leading-6 text-white/50">
+                          {adPackage.subtitle}
                         </p>
                       </div>
 
-                      <p className="font-bold text-rose-300">{item.price}</p>
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold ${
+                          isSelected
+                            ? "bg-rose-500 text-white"
+                            : "bg-white/10 text-white/50"
+                        }`}
+                      >
+                        {isSelected ? "✓" : "+"}
+                      </div>
                     </div>
 
-                    <ul className="mt-4 space-y-2 text-sm text-white/60">
-                      {item.features.map((feature) => (
-                        <li key={feature}>• {feature}</li>
+                    <div className="mt-5">
+                      <p className="text-3xl font-bold">
+                        {adPackage.price} RON
+                      </p>
+
+                      <p className="mt-1 text-sm text-white/45">
+                        {adPackage.duration}
+                      </p>
+                    </div>
+
+                    <div className="mt-5 space-y-2">
+                      {adPackage.features.map((feature) => (
+                        <p
+                          key={feature}
+                          className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white/60"
+                        >
+                          ✓ {feature}
+                        </p>
                       ))}
-                    </ul>
+                    </div>
                   </button>
                 );
               })}
             </div>
+
+            {errors.selectedPackageId && (
+              <p className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                {errors.selectedPackageId}
+              </p>
+            )}
           </div>
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6">
-            <h2 className="text-xl font-bold">Preview rapid</h2>
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl md:p-8">
+            <label className="flex cursor-pointer gap-4 rounded-3xl border border-white/10 bg-black/30 p-5 text-sm leading-7 text-white/65 transition hover:bg-white/[0.04]">
+              <input
+                type="checkbox"
+                checked={acceptedRules}
+                onChange={(event) => {
+                  setAcceptedRules(event.target.checked);
+                  clearError("acceptedRules");
+                }}
+                className="mt-1 h-4 w-4 shrink-0"
+              />
 
-            <div className="mt-5 overflow-hidden rounded-3xl border border-white/10 bg-black/30">
-              <div className="flex h-56 items-center justify-center bg-gradient-to-br from-zinc-800 via-zinc-900 to-black text-6xl">
-                ✦
+              <span>
+                Confirm că informațiile sunt corecte, persoana are minimum 18
+                ani și accept{" "}
+                <Link href="/reguli" className="font-semibold text-rose-300">
+                  regulile platformei
+                </Link>
+                ,{" "}
+                <Link href="/termeni" className="font-semibold text-rose-300">
+                  termenii și confidențialitatea
+                </Link>
+                .
+              </span>
+            </label>
+
+            {errors.acceptedRules && (
+              <p className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                {errors.acceptedRules}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={submitAd}
+              className="mt-6 w-full rounded-full bg-rose-500 px-8 py-4 font-semibold text-white transition hover:bg-rose-400"
+            >
+              Continuă către verificare 18+
+            </button>
+
+            <p className="mt-4 text-center text-sm leading-7 text-white/45">
+              După acest pas, anunțul intră în flow-ul de verificare 18+ și
+              moderare admin.
+            </p>
+          </div>
+        </div>
+
+        <aside className="space-y-8">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-400">
+              Previzualizare
+            </p>
+
+            <div className="mt-5 rounded-[2rem] border border-white/10 bg-black/30 p-5">
+              <div className="flex aspect-[4/5] items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/[0.04] text-center">
+                <div>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-rose-500/10 text-3xl">
+                    ✦
+                  </div>
+
+                  <p className="mt-4 font-semibold text-white/80">
+                    Profil demo
+                  </p>
+
+                  <p className="mt-2 text-sm text-white/45">
+                    {photoNames.length
+                      ? `${photoNames.length} fotografii selectate`
+                      : "Galerie demo"}
+                  </p>
+                </div>
               </div>
 
-              <div className="p-5">
-                <div className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs text-white/60">
+              <div className="mt-5 flex flex-wrap gap-2">
+                <span className="rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-200">
+                  {selectedPackage.title}
+                </span>
+
+                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
                   Draft
-                </div>
+                </span>
+              </div>
 
-                <h3 className="text-xl font-bold">
-                  {displayName || "Nume profil"}
-                </h3>
+              <h2 className="mt-4 text-2xl font-bold">
+                {displayName || "Nume profil"}
+                {age ? `, ${age}` : ""}
+              </h2>
 
-                <p className="mt-2 text-sm text-white/50">
-                  {age || "--"} ani • {city || "Oraș"}
+              <p className="mt-2 text-sm text-white/45">
+                {city || "Oraș nespecificat"}
+              </p>
+
+              <p className="mt-4 line-clamp-5 text-sm leading-7 text-white/60">
+                {description ||
+                  "Descrierea profilului va apărea aici în previzualizarea anunțului."}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-300">
+              Pachet selectat
+            </p>
+
+            <h2 className="mt-3 text-2xl font-bold text-emerald-100">
+              {selectedPackage.title}
+            </h2>
+
+            <div className="mt-5 grid gap-3">
+              <div className="rounded-3xl border border-emerald-500/20 bg-black/20 p-4">
+                <p className="text-sm text-emerald-100/50">Cost demo</p>
+                <p className="mt-2 text-2xl font-bold text-white">
+                  {selectedPackage.price} RON
                 </p>
+              </div>
 
-                <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/60">
-                  {description ||
-                    "Descrierea anunțului va apărea aici înainte de verificare."}
+              <div className="rounded-3xl border border-emerald-500/20 bg-black/20 p-4">
+                <p className="text-sm text-emerald-100/50">Durată</p>
+                <p className="mt-2 font-semibold text-white">
+                  {selectedPackage.duration}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-emerald-500/20 bg-black/20 p-4">
+                <p className="text-sm text-emerald-100/50">Plată</p>
+                <p className="mt-2 font-semibold text-white">
+                  După aprobare admin
                 </p>
               </div>
             </div>
@@ -491,31 +967,67 @@ export default function PublishAdPage() {
 
           <div className="rounded-[2rem] border border-sky-500/20 bg-sky-500/10 p-6">
             <h2 className="text-xl font-bold text-sky-200">
-              Reset automat pentru anunț nou
+              Flow corect
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-sky-100/70">
-              Când apeși „Continuă către verificare”, statusurile vechi de
-              plată, publicare și verificare sunt resetate automat pentru noul
-              anunț.
-            </p>
+            <div className="mt-5 space-y-3 text-sm leading-7 text-sky-100/75">
+              <p>1. Advertiserul completează anunțul.</p>
+              <p>2. Trimite verificarea 18+.</p>
+              <p>3. Adminul aprobă sau respinge.</p>
+              <p>4. Advertiserul plătește pachetul.</p>
+              <p>5. Profilul devine public.</p>
+            </div>
           </div>
 
-          <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/10 p-6">
-            <h2 className="text-xl font-bold text-amber-200">
-              Demo local
+          <div className="rounded-[2rem] border border-rose-500/20 bg-rose-500/10 p-6">
+            <h2 className="text-xl font-bold text-rose-200">
+              Reguli importante
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-amber-100/70">
-              Momentan folosim localStorage pentru test. Mai târziu vom salva
-              anunțurile, verificările și plățile într-o bază de date reală.
+            <p className="mt-3 text-sm leading-7 text-rose-100/75">
+              Nu publica informații false, conținut interzis, minori, materiale
+              abuzive sau activități ilegale. Platforma este 18+ și moderată.
             </p>
+
+            <Link
+              href="/reguli"
+              className="mt-5 block rounded-full bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-white/80"
+            >
+              Citește regulile
+            </Link>
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6">
+            <h2 className="text-xl font-bold">Pagini utile</h2>
+
+            <div className="mt-5 grid gap-3">
+              <Link
+                href="/cont"
+                className="rounded-full bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-white/80"
+              >
+                Dashboard advertiser
+              </Link>
+
+              <Link
+                href="/cont/anunt"
+                className="rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
+              >
+                Status anunț
+              </Link>
+
+              <Link
+                href="/profiluri"
+                className="rounded-full border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10"
+              >
+                Profiluri
+              </Link>
+            </div>
           </div>
         </aside>
       </section>
 
       <footer className="border-t border-white/10 px-6 py-8 text-center text-sm text-white/40">
-        Luxe.ro © 2026 — Platformă 18+ pentru utilizatori adulți.
+        Luxe.ro © 2026 — publicare anunț advertiser 18+.
       </footer>
     </main>
   );
